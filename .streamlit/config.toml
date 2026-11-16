@@ -1,0 +1,7 @@
+# Read by Streamlit when it is started from the project folder.
+# The dashboard has no login, so it only listens on this computer.
+[server]
+address = "127.0.0.1"
+
+[browser]
+gatherUsageStats = false

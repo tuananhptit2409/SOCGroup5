@@ -1,0 +1,20 @@
+{
+  "db_path": "data/soc.db",
+  "allowed_input_dirs": ["datasets"],
+  "reports_dir": "reports",
+  "max_line_length": 65536,
+  "batch_size": 20000,
+  "syslog_default_year": 2026,
+  "syslog_utc_offset_minutes": 0,
+  "log_level": "INFO",
+  "ssh_bruteforce": {"threshold": 5, "window_seconds": 60, "followup_seconds": 300},
+  "port_scan": {"threshold": 15, "window_seconds": 30, "internal_only": true},
+  "suspicious_process": {
+    "min_score": 2,
+    "dedup_window_seconds": 300,
+    "trusted_parent_names": ["msiexec.exe", "trustedinstaller.exe", "tiworker.exe"],
+    "allow_image_patterns": []
+  },
+  "pivot": {"window_seconds": 300},
+  "correlation": {"incident_window_seconds": 1800}
+}

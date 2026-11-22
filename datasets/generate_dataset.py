@@ -16,6 +16,7 @@ from typing import Any
 from datasets import synth as s
 
 DATASET_YEAR = 2026
+WEB_SERVER_NAME = "web01"        # access log không ghi tên máy; run-sample gán tên này
 SEED = 42
 PS = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 ENCODED = "SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkA"
@@ -27,15 +28,25 @@ def build() -> tuple[dict[str, list[str]], dict[str, Any]]:
     linux: list[tuple[float, str]] = []
     suri: list[tuple[float, str]] = []
     sysm: list[tuple[float, str]] = []
+    web: list[tuple[float, str]] = []
     scenarios: list[dict[str, Any]] = []
     counter = iter(range(1, 10_000_000))
 
     def scenario(sid: str, description: str, source: str, n_events: int, rule_id: str | None,
-                 severity: int | None, entity: dict[str, Any], behavior: str) -> None:
+                 severity: int | None, entity: dict[str, Any], behavior: str, *, occurrences: int = 1,
+                 incident_group: str | None = None, label: str | None = None) -> None:
+        """Register one labelled scenario.
+
+        occurrences    raw detections expected to be deduplicated into this one alert
+        incident_group scenarios sharing a group are expected to end up in ONE incident
+        label          "attack" / "benign" ground-truth label (default: attack if an alert is expected)
+        """
         scenarios.append({
             "scenario_id": sid, "description": description, "input": {"source": source, "events": n_events},
+            "label": label or ("attack" if rule_id else "benign"),
             "expected_behavior": behavior, "expected_alert": rule_id is not None, "expected_rule_id": rule_id,
-            "expected_severity": severity, "expected_incident": rule_id is not None, "entity": entity})
+            "expected_severity": severity, "expected_occurrences": occurrences if rule_id else 0,
+            "expected_incident": rule_id is not None, "incident_group": incident_group or sid, "entity": entity})
 
     # ---------------------------------------------------------------- benign noise
     servers = ["web01", "db01", "app01"]
@@ -151,25 +162,121 @@ def build() -> tuple[dict[str, list[str]], dict[str, Any]]:
     scenario("S13", "Normal process from Program Files", "sysmon", 1, None, None, {"hostname": "WS21"}, "No alert")
 
     # --------------------------------------------------------- pivot scenarios
+    rundll = r"C:\Windows\System32\rundll32.exe"
     suri.append((6000, s.suricata_alert(s.at(6000), "203.0.113.99", 51515, "10.0.0.30", 445,
                                         "SYNTHETIC EXPLOIT SMB remote code execution attempt", 1, next(counter))))
     sysm.append((6002, s.sysmon_network(s.at(6002), "WS02", "System", "203.0.113.99", 51515, "10.0.0.30", 445,
-                                        initiated=False, pid=4)))
-    sysm.append((6060, s.sysmon_network(s.at(6060), "WS02", r"C:\Windows\System32\rundll32.exe", "10.0.0.30",
-                                        49777, "203.0.113.99", 4444, initiated=True, pid=7010)))
-    scenario("S14", "Suricata alert confirmed by Sysmon connections with the same peers", "suricata+sysmon", 3,
-             "SOC-004", 4, {"src_ip": "203.0.113.99", "dst_ip": "10.0.0.30", "hostname": "WS02"},
-             "Alert: network-to-host pivot")
+                                        initiated=False, pid=4)))          # the exploit itself, seen on the host
+    sysm.append((6060, s.sysmon_network(s.at(6060), "WS02", rundll, "10.0.0.30", 49777, "10.0.0.40", 445,
+                                        initiated=True, pid=7010)))
+    sysm.append((6075, s.sysmon_network(s.at(6075), "WS02", rundll, "10.0.0.30", 49778, "10.0.0.41", 3389,
+                                        initiated=True, pid=7010)))
+    scenario("S14", "High-severity Suricata alert on 10.0.0.30, which then opens SMB/RDP connections to two "
+             "other internal hosts (lateral movement)", "suricata+sysmon", 3, "SOC-004", 4,
+             {"src_ip": "10.0.0.30", "hostname": "WS02"}, "Alert: network-to-host pivot")
     suri.append((6300, s.suricata_alert(s.at(6300), "203.0.113.120", 51616, "10.0.0.31", 80,
                                         "SYNTHETIC WEB suspicious user-agent", 2, next(counter))))
     scenario("S15", "Suricata alert without any Sysmon connection", "suricata", 1, None, None,
-             {"src_ip": "203.0.113.120", "dst_ip": "10.0.0.31"}, "No pivot alert")
-    suri.append((6600, s.suricata_alert(s.at(6600), "203.0.113.130", 51717, "10.0.0.32", 443,
-                                        "SYNTHETIC TLS suspicious certificate", 2, next(counter))))
-    sysm.append((7800, s.sysmon_network(s.at(7800), "WS22", r"C:\Program Files\Browser\browser.exe",
-                                        "10.0.0.32", 49888, "203.0.113.130", 443, initiated=True, pid=7020)))
-    scenario("S16", "Same peers but Sysmon connection 20 minutes later (outside window)", "suricata+sysmon", 2,
-             None, None, {"src_ip": "203.0.113.130", "dst_ip": "10.0.0.32"}, "No pivot alert")
+             {"src_ip": "10.0.0.31"}, "No pivot alert", label="attack")
+    suri.append((6600, s.suricata_alert(s.at(6600), "203.0.113.130", 51717, "10.0.0.32", 445,
+                                        "SYNTHETIC EXPLOIT SMB overflow attempt", 1, next(counter))))
+    sysm.append((7800, s.sysmon_network(s.at(7800), "WS22", rundll, "10.0.0.32", 49888, "10.0.0.45", 445,
+                                        initiated=True, pid=7020)))
+    scenario("S16", "High-severity alert, internal connection only 20 minutes later (outside the 300 s window)",
+             "suricata+sysmon", 2, None, None, {"src_ip": "10.0.0.32"}, "No pivot alert", label="attack")
+    suri.append((6700, s.suricata_alert(s.at(6700), "203.0.113.140", 51818, "10.0.0.33", 80,
+                                        "SYNTHETIC POLICY outdated browser", 3, next(counter))))
+    sysm.append((6730, s.sysmon_network(s.at(6730), "WS23", r"C:\Program Files\Backup\agent.exe", "10.0.0.33",
+                                        49900, "10.0.0.46", 445, initiated=True, pid=7030)))
+    scenario("S18", "Low-severity Suricata alert followed by a normal internal connection", "suricata+sysmon", 2,
+             None, None, {"src_ip": "10.0.0.33"}, "No pivot alert (alert is not high severity)")
+
+    # ------------------------------------------------ deduplication and correlation
+    for k in range(4):                     # one attacker repeats the brute force every 3 minutes
+        for j in range(6):
+            t = 2600 + 180 * k + 5 * j
+            linux.append((t, s.linux_failed(s.at(t), "web02", "root", "198.51.100.77", 47000 + 10 * k + j,
+                                            9700 + 10 * k + j)))
+    scenario("S19", "Same IP repeats a 6-failure SSH burst 4 times, 3 minutes apart", "linux_auth", 24, "SOC-001", 3,
+             {"src_ip": "198.51.100.77", "hostname": "web02"},
+             "ONE deduplicated alert with 4 occurrences (cooldown 600 s), one incident", occurrences=4)
+    for k in range(20):                    # a compromised internal host scans, then brute-forces a server
+        t = 5200 + 0.5 * k
+        suri.append((t, s.suricata_flow(s.at(t), "10.0.0.61", 52000 + k, "10.0.0.25", 1000 + k, next(counter))))
+    scenario("S20", "Internal host 10.0.0.61 scans 20 ports of 10.0.0.25 ...", "suricata", 20, "SOC-002", 3,
+             {"src_ip": "10.0.0.61", "dst_ip": "10.0.0.25"}, "Port-scan alert", incident_group="G-10.0.0.61")
+    for k in range(6):
+        t = 5250 + 4 * k
+        linux.append((t, s.linux_failed(s.at(t), "db02", "postgres", "10.0.0.61", 53000 + k, 9800 + k)))
+    scenario("S21", "... then the same host brute-forces SSH on db02", "linux_auth", 6, "SOC-001", 3,
+             {"src_ip": "10.0.0.61", "hostname": "db02"}, "Brute-force alert in the SAME incident as S20",
+             incident_group="G-10.0.0.61")
+
+    # ------------------------------------------------------- beaconing and sudo
+    beacon = r"C:\Users\carl\AppData\Roaming\Updater\updater.exe"
+    sysm.append((6900, s.sysmon_process(s.at(6900), "WS07", beacon, "updater.exe --silent",
+                                        r"C:\Windows\explorer.exe", user="CORP\\carl", pid=7040)))
+    for k in range(10):                    # beacon to the same server every 60 s
+        t = 6960 + 60 * k
+        sysm.append((t, s.sysmon_network(s.at(t), "WS07", beacon, "10.0.1.70", 50100 + k, "198.51.100.66", 443,
+                                         initiated=True, pid=7040)))
+        suri.append((t + 0.2, s.suricata_flow(s.at(t + 0.2), "10.0.1.70", 50100 + k, "198.51.100.66", 443,
+                                               next(counter))))
+    scenario("S22", "Malware beaconing: unknown executable in AppData\\Roaming calls 198.51.100.66:443 every 60 s",
+             "sysmon+suricata", 1, "SOC-003", 2, {"hostname": "WS07"},
+             "LOW alert for the process in AppData (the 60 s periodicity itself is not a rule; it is visible "
+             "in the Events page by searching 198.51.100.66)")
+    linux.append((3700, "Nov 13 03:01:40 web01 sudo:    alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; "
+                        "COMMAND=/usr/bin/systemctl restart nginx"))
+    linux.append((3710, "Nov 13 03:01:50 web01 sudo:    alice : 3 incorrect password attempts ; TTY=pts/0 ; "
+                        "PWD=/home/alice ; USER=root ; COMMAND=/bin/cat /etc/shadow"))
+    scenario("S23", "sudo usage and a failed sudo password on web01", "linux_auth", 2, None, None,
+             {"hostname": "web01", "username": "alice"},
+             "Parsed as sudo_command / sudo_auth_failure; no alert (no sudo rule)")
+
+    # ------------------------------------------------------------ web access log
+    pages = ["/", "/products", "/about", "/contact", "/static/app.css", "/static/app.js", "/img/logo.png"]
+    for i in range(160):                   # normal visitors
+        t = rng.uniform(0, 7200)
+        client = f"192.0.2.{rng.randint(100, 140)}"
+        roll = rng.random()
+        if roll < 0.15:
+            line = s.web_access(s.at(t), client, f"/products?id={rng.randint(1, 300)}&sort=price")
+        elif roll < 0.22:
+            line = s.web_access(s.at(t), client, "/login", 302, method="POST")
+        elif roll < 0.25:
+            line = s.web_access(s.at(t), client, f"/img/old_banner{rng.randint(1, 9)}.png", 404)
+        else:
+            line = s.web_access(s.at(t), client, rng.choice(pages))
+        web.append((t + i * 1e-6, line))
+    sqlmap = "sqlmap/1.8#stable (https://sqlmap.org)"
+    payloads = [("/item.php?id=1", 200), ("/item.php?id=1%27", 500),
+                ("/item.php?id=1%27%20OR%20%271%27=%271", 200),
+                ("/item.php?id=1%20UNION%20ALL%20SELECT%20username,password%20FROM%20users--", 500),
+                ("/item.php?id=1%20AND%20SLEEP(5)", 500), ("/item.php?id=1;DROP%20TABLE%20users", 500)]
+    for k, (path, status) in enumerate(payloads):
+        web.append((3000 + 4 * k, s.web_access(s.at(3000 + 4 * k), "198.51.100.90", path, status, agent=sqlmap)))
+    scenario("S24", "SQL injection with sqlmap against web01; one payload answered 200", "web_access", 6,
+             "SOC-005", 4, {"src_ip": "198.51.100.90", "hostname": WEB_SERVER_NAME},
+             "HIGH alert: attack payload answered 2xx")
+    words = ["admin", "backup", "old", "test", "dev", "api", "uploads", "private", "db", "tmp"]
+    for k in range(40):
+        path = f"/{words[k % 10]}{k // 10 or ''}/"
+        status = 200 if path in ("/api/", "/uploads/") else 404
+        web.append((4000 + k, s.web_access(s.at(4000 + k), "198.51.100.91", path, status, agent="gobuster/3.6")))
+    scenario("S25", "Directory brute force: 40 requests in 40 s, 38 answered 404", "web_access", 40, "SOC-005", 3,
+             {"src_ip": "198.51.100.91", "hostname": WEB_SERVER_NAME}, "MEDIUM alert: burst of 4xx errors")
+    web.append((4500, s.web_access(s.at(4500), "198.51.100.92", "/.env", 404, agent="Mozilla/5.0 (compatible; bot)")))
+    web.append((4510, s.web_access(s.at(4510), "198.51.100.92", "/wp-login.php", 404)))
+    for k in range(5):
+        web.append((4600 + k, s.web_access(s.at(4600 + k), "192.0.2.150", f"/img/missing{k}.jpg", 404)))
+    scenario("S26", "One /.env probe from an Internet bot and a visitor with 5 broken images", "web_access", 7,
+             None, None, {"src_ip": "198.51.100.92"}, "No alert (single probes and a few 404s are normal noise)")
+    web.append((900, s.web_access(s.at(900), "203.0.113.10", "/download.php?file=../../../../etc/passwd", 404)))
+    web.append((905, s.web_access(s.at(905), "203.0.113.10", "/download.php?file=..%2f..%2f..%2fwin.ini", 404)))
+    scenario("S27", "The SSH attacker of S01 also tries path traversal on the website", "web_access", 2, "SOC-005", 3,
+             {"src_ip": "203.0.113.10", "hostname": WEB_SERVER_NAME},
+             "MEDIUM alert; joins the incident of S01 (same source IP within 30 minutes)", incident_group="S01")
 
     # --------------------------------------------------------------- malformed
     bad = {
@@ -184,14 +291,17 @@ def build() -> tuple[dict[str, list[str]], dict[str, Any]]:
         "sysmon.jsonl": ['{"EventID": 1, "UtcTime": ', json.dumps({"EventID": 5, "UtcTime": s.sysmon_ts(s.at(12)),
                                                                   "Computer": "WS05", "Image": "x.exe"}),
                          json.dumps({"EventID": 1, "Computer": "WS05", "Image": r"C:\a.exe"})],
+        "web_access.log": ["GET / HTTP/1.1 200",
+                           '192.0.2.5 - - [13/Nov/2026:02:00:00 +0000] "GET / HTTP/1.1" 999 10 "-" "-"'],
     }
-    scenario("S17", "Malformed / unsupported / invalid lines in all three sources", "all",
+    scenario("S17", "Malformed / unsupported / invalid lines in all four sources", "all",
              sum(len(v) for v in bad.values()), None, None, {},
              "Every line is rejected with a reason; the pipeline keeps running")
 
     files = {"linux_auth.log": [line for _, line in sorted(linux)],
              "suricata_eve.jsonl": [line for _, line in sorted(suri)],
-             "sysmon.jsonl": [line for _, line in sorted(sysm)]}
+             "sysmon.jsonl": [line for _, line in sorted(sysm)],
+             "web_access.log": [line for _, line in sorted(web)]}
     for name, lines in files.items():
         if len(set(lines)) != len(lines):
             raise RuntimeError(f"generator produced duplicate lines in {name}")
@@ -200,18 +310,23 @@ def build() -> tuple[dict[str, list[str]], dict[str, Any]]:
             lines.insert((i + 1) * step + i, line)
 
     expected_alerts = [sc for sc in scenarios if sc["expected_alert"]]
+    raw_detections = sum(sc["expected_occurrences"] for sc in expected_alerts)
+    incidents = len({sc["incident_group"] for sc in expected_alerts})
+    ids_alerts = sum(1 for _, line in suri if '"event_type": "alert"' in line)
     truth = {
         "note": "SYNTHETIC dataset generated by datasets/generate_dataset.py; not real attack data.",
-        "seed": SEED, "syslog_year": DATASET_YEAR,
+        "seed": SEED, "syslog_year": DATASET_YEAR, "web_server_name": WEB_SERVER_NAME,
         "files": {name: {"lines": len(lines), "rejected": len(bad[name]),
                          "valid_events": len(lines) - len(bad[name])} for name, lines in files.items()},
         "expected_totals": {
             "raw_events": sum(len(v) for v in files.values()),
             "events": sum(len(v) - len(bad[n]) for n, v in files.items()),
             "rejected": sum(len(v) for v in bad.values()),
-            "alerts": len(expected_alerts), "incidents": len(expected_alerts),
+            "alerts": len(expected_alerts), "incidents": incidents,
+            "raw_detections": raw_detections, "ids_alerts": ids_alerts,
+            "raw_alerts": raw_detections + ids_alerts,
             "alerts_per_rule": {rule: sum(1 for sc in expected_alerts if sc["expected_rule_id"] == rule)
-                                for rule in ("SOC-001", "SOC-002", "SOC-003", "SOC-004")}},
+                                for rule in ("SOC-001", "SOC-002", "SOC-003", "SOC-004", "SOC-005")}},
         "scenarios": scenarios,
     }
     return files, truth

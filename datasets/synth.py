@@ -99,3 +99,14 @@ def sysmon_network(dt: datetime, computer: str, image: str, src: str, sport: int
 def sysmon_file(dt: datetime, computer: str, image: str, target: str, pid: int = 4000) -> str:
     return json.dumps({"EventID": 11, "UtcTime": sysmon_ts(dt), "Computer": computer, "ProcessId": pid,
                        "Image": image, "TargetFilename": target})
+
+
+def web_ts(dt: datetime) -> str:
+    """Thời gian kiểu access log: 13/Nov/2026:02:00:00 +0000."""
+    return f"{dt.day:02d}/{_MONTHS[dt.month - 1]}/{dt.year}:{dt:%H:%M:%S} +0000"
+
+
+def web_access(dt: datetime, ip: str, path: str, status: int = 200, method: str = "GET", size: int = 512,
+               agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", user: str = "-") -> str:
+    """Một dòng access log định dạng combined (nginx / Apache)."""
+    return f'{ip} - {user} [{web_ts(dt)}] "{method} {path} HTTP/1.1" {status} {size} "-" "{agent}"'

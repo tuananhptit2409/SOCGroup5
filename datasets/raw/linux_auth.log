@@ -66,7 +66,6 @@ Nov 13 02:24:08 db01 CRON[2037]: pam_unix(cron:session): session opened for user
 Nov 13 02:24:56 web01 CRON[2168]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 02:25:38 db01 CRON[2097]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 02:25:50 db01 sshd[2007]: Accepted publickey for deploy from 10.0.1.16 port 41763 ssh2
-this is not a syslog line
 Nov 13 02:26:21 db01 CRON[2017]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 02:26:25 web01 sshd[2040]: Failed password for ops from 10.0.2.49 port 37501 ssh2
 Nov 13 02:26:57 web01 CRON[2192]: pam_unix(cron:session): session opened for user root by (uid=0)
@@ -75,6 +74,7 @@ Nov 13 02:27:29 web01 sshd[2018]: Accepted publickey for deploy from 10.0.1.30 p
 Nov 13 02:29:08 app01 sshd[2136]: Accepted publickey for alice from 10.0.1.59 port 49674 ssh2
 Nov 13 02:29:11 app01 sshd[2151]: Accepted publickey for alice from 10.0.1.47 port 47397 ssh2
 Nov 13 02:29:14 app01 sshd[2195]: Accepted publickey for alice from 10.0.1.19 port 46654 ssh2
+this is not a syslog line
 Nov 13 02:29:18 db01 CRON[2216]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 02:30:00 app01 sshd[9300]: Failed password for alice from 192.0.2.77 port 43000 ssh2
 Nov 13 02:30:04 app01 CRON[2228]: pam_unix(cron:session): session opened for user root by (uid=0)
@@ -115,27 +115,51 @@ Nov 13 02:40:14 web01 sshd[9402]: Failed password for root from 203.0.113.44 por
 Nov 13 02:40:21 web01 sshd[9403]: Failed password for root from 203.0.113.44 port 44003 ssh2
 Nov 13 02:40:38 web01 CRON[2234]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 02:41:15 app01 sshd[2152]: Accepted publickey for alice from 10.0.1.45 port 44868 ssh2
+Nov 13 02:43:20 web02 sshd[9700]: Failed password for root from 198.51.100.77 port 47000 ssh2
+Nov 13 02:43:25 web02 sshd[9701]: Failed password for root from 198.51.100.77 port 47001 ssh2
+Nov 13 02:43:30 web02 sshd[9702]: Failed password for root from 198.51.100.77 port 47002 ssh2
+Nov 13 02:43:35 web02 sshd[9703]: Failed password for root from 198.51.100.77 port 47003 ssh2
+Nov 13 02:43:40 web02 sshd[9704]: Failed password for root from 198.51.100.77 port 47004 ssh2
 Nov 13 02:43:42 web01 CRON[2090]: pam_unix(cron:session): session opened for user root by (uid=0)
+Nov 13 02:43:45 web02 sshd[9705]: Failed password for root from 198.51.100.77 port 47005 ssh2
 Nov 13 02:44:25 web01 sshd[2014]: Accepted publickey for alice from 10.0.1.52 port 51234 ssh2
 Nov 13 02:44:52 web01 CRON[2030]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 02:45:25 app01 CRON[2010]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 02:45:36 db01 CRON[2210]: pam_unix(cron:session): session opened for user root by (uid=0)
+Nov 13 02:46:20 web02 sshd[9710]: Failed password for root from 198.51.100.77 port 47010 ssh2
+Nov 13 02:46:25 web02 sshd[9711]: Failed password for root from 198.51.100.77 port 47011 ssh2
+Nov 13 02:46:30 web02 sshd[9712]: Failed password for root from 198.51.100.77 port 47012 ssh2
+Nov 13 02:46:35 web02 sshd[9713]: Failed password for root from 198.51.100.77 port 47013 ssh2
+Nov 13 02:46:40 web02 sshd[9714]: Failed password for root from 198.51.100.77 port 47014 ssh2
 Nov 13 02:46:44 app01 sshd[2116]: Accepted publickey for alice from 10.0.1.54 port 42464 ssh2
+Nov 13 02:46:45 web02 sshd[9715]: Failed password for root from 198.51.100.77 port 47015 ssh2
 Nov 13 02:47:28 app01 sshd[2020]: Accepted publickey for deploy from 10.0.1.39 port 38081 ssh2
 Nov 13 02:48:05 web01 sshd[2162]: Failed password for ops from 10.0.2.171 port 31756 ssh2
 Nov 13 02:48:27 app01 sshd[2058]: Failed password for ops from 10.0.2.67 port 31302 ssh2
+Nov 13 02:49:20 web02 sshd[9720]: Failed password for root from 198.51.100.77 port 47020 ssh2
+Nov 13 02:49:25 web02 sshd[9721]: Failed password for root from 198.51.100.77 port 47021 ssh2
+Nov 13 02:49:30 web02 sshd[9722]: Failed password for root from 198.51.100.77 port 47022 ssh2
+Nov 13 02:49:35 web02 sshd[9723]: Failed password for root from 198.51.100.77 port 47023 ssh2
+Nov 13 02:49:40 web02 sshd[9724]: Failed password for root from 198.51.100.77 port 47024 ssh2
+Nov 13 02:49:45 web02 sshd[9725]: Failed password for root from 198.51.100.77 port 47025 ssh2
 Nov 13 02:50:00 web01 sshd[9500]: Failed password for root from 203.0.113.55 port 45000 ssh2
 Nov 13 02:51:12 app01 CRON[2109]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 02:51:24 app01 sshd[2022]: Accepted publickey for deploy from 10.0.1.35 port 46696 ssh2
 Nov 13 02:51:43 db01 sshd[2044]: Accepted publickey for alice from 10.0.1.36 port 31775 ssh2
 Nov 13 02:52:04 web01 sshd[2213]: Failed password for ops from 10.0.2.22 port 58592 ssh2
+Nov 13 02:52:20 web02 sshd[9730]: Failed password for root from 198.51.100.77 port 47030 ssh2
+Nov 13 02:52:25 web02 sshd[9731]: Failed password for root from 198.51.100.77 port 47031 ssh2
 Nov 13 02:52:30 web01 sshd[9501]: Failed password for root from 203.0.113.55 port 45001 ssh2
+Nov 13 02:52:30 web02 sshd[9732]: Failed password for root from 198.51.100.77 port 47032 ssh2
+Nov 99 25:61:61 web01 sshd[1]: Failed password for root from 203.0.113.200 port 22 ssh2
+Nov 13 02:52:35 web02 sshd[9733]: Failed password for root from 198.51.100.77 port 47033 ssh2
+Nov 13 02:52:40 web02 sshd[9734]: Failed password for root from 198.51.100.77 port 47034 ssh2
+Nov 13 02:52:45 web02 sshd[9735]: Failed password for root from 198.51.100.77 port 47035 ssh2
 Nov 13 02:52:47 app01 sshd[2112]: Accepted publickey for ops from 10.0.1.28 port 40476 ssh2
 Nov 13 02:53:46 web01 sshd[2150]: Accepted publickey for ops from 10.0.1.15 port 52668 ssh2
 Nov 13 02:54:03 app01 sshd[2170]: Accepted publickey for deploy from 10.0.1.40 port 39440 ssh2
 Nov 13 02:54:33 db01 CRON[2125]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 02:54:52 web01 sshd[2062]: Accepted publickey for alice from 10.0.1.10 port 33276 ssh2
-Nov 99 25:61:61 web01 sshd[1]: Failed password for root from 203.0.113.200 port 22 ssh2
 Nov 13 02:55:00 web01 sshd[9502]: Failed password for root from 203.0.113.55 port 45002 ssh2
 Nov 13 02:55:26 web01 sshd[2187]: Accepted publickey for alice from 10.0.1.22 port 54787 ssh2
 Nov 13 02:55:28 db01 CRON[2016]: pam_unix(cron:session): session opened for user root by (uid=0)
@@ -156,7 +180,9 @@ Nov 13 03:00:00 web01 sshd[9504]: Failed password for root from 203.0.113.55 por
 Nov 13 03:00:00 web01 sshd[9600]: Accepted password for ops from 10.0.3.15 port 46000 ssh2
 Nov 13 03:00:16 app01 CRON[2205]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 03:00:38 web01 sshd[2004]: Accepted publickey for alice from 10.0.1.45 port 52981 ssh2
+Nov 13 03:01:40 web01 sudo:    alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx
 Nov 13 03:01:45 web01 CRON[2186]: pam_unix(cron:session): session opened for user root by (uid=0)
+Nov 13 03:01:50 web01 sudo:    alice : 3 incorrect password attempts ; TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/bin/cat /etc/shadow
 Nov 13 03:02:16 db01 sshd[2181]: Accepted publickey for alice from 10.0.1.27 port 44283 ssh2
 Nov 13 03:02:36 app01 sshd[2141]: Failed password for ops from 10.0.2.150 port 47634 ssh2
 Nov 13 03:02:57 db01 CRON[2156]: pam_unix(cron:session): session opened for user root by (uid=0)
@@ -202,9 +228,9 @@ Nov 13 03:19:22 web01 sshd[2138]: Failed password for ops from 10.0.2.147 port 3
 Nov 13 03:20:16 web01 sshd[2042]: Accepted publickey for alice from 10.0.1.44 port 48881 ssh2
 Nov 13 03:20:40 db01 sshd[2180]: Accepted publickey for deploy from 10.0.1.46 port 45417 ssh2
 Nov 13 03:20:48 app01 sshd[2045]: Accepted publickey for alice from 10.0.1.16 port 41118 ssh2
+Nov 13 02:10:00 web01 sshd[77]: Failed password for root from 999.1.1.1 port 22 ssh2
 Nov 13 03:21:39 app01 sshd[2024]: Accepted publickey for alice from 10.0.1.14 port 45337 ssh2
 Nov 13 03:22:29 db01 sshd[2070]: Accepted publickey for deploy from 10.0.1.42 port 33024 ssh2
-Nov 13 02:10:00 web01 sshd[77]: Failed password for root from 999.1.1.1 port 22 ssh2
 Nov 13 03:22:55 web01 sshd[2074]: Accepted publickey for ops from 10.0.1.44 port 49087 ssh2
 Nov 13 03:23:33 db01 sshd[2103]: Accepted publickey for alice from 10.0.1.35 port 52532 ssh2
 Nov 13 03:24:50 app01 sshd[2171]: Accepted publickey for deploy from 10.0.1.39 port 38668 ssh2
@@ -212,7 +238,13 @@ Nov 13 03:25:10 db01 sshd[2191]: Accepted publickey for ops from 10.0.1.45 port 
 Nov 13 03:26:19 app01 CRON[2089]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 03:26:21 app01 sshd[2028]: Accepted publickey for deploy from 10.0.1.58 port 58525 ssh2
 Nov 13 03:26:41 db01 CRON[2207]: pam_unix(cron:session): session opened for user root by (uid=0)
+Nov 13 03:27:30 db02 sshd[9800]: Failed password for postgres from 10.0.0.61 port 53000 ssh2
+Nov 13 03:27:34 db02 sshd[9801]: Failed password for postgres from 10.0.0.61 port 53001 ssh2
 Nov 13 03:27:34 app01 CRON[2009]: pam_unix(cron:session): session opened for user root by (uid=0)
+Nov 13 03:27:38 db02 sshd[9802]: Failed password for postgres from 10.0.0.61 port 53002 ssh2
+Nov 13 03:27:42 db02 sshd[9803]: Failed password for postgres from 10.0.0.61 port 53003 ssh2
+Nov 13 03:27:46 db02 sshd[9804]: Failed password for postgres from 10.0.0.61 port 53004 ssh2
+Nov 13 03:27:50 db02 sshd[9805]: Failed password for postgres from 10.0.0.61 port 53005 ssh2
 Nov 13 03:27:52 web01 sshd[2231]: Accepted publickey for ops from 10.0.1.28 port 35755 ssh2
 Nov 13 03:28:22 app01 CRON[2002]: pam_unix(cron:session): session opened for user root by (uid=0)
 Nov 13 03:29:14 db01 sshd[2110]: Accepted publickey for deploy from 10.0.1.38 port 57520 ssh2

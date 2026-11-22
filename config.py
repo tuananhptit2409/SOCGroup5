@@ -24,7 +24,9 @@ class ConfigError(Exception):
 class SshBruteForceConfig:
     threshold: int = 5            # failed logins required
     window_seconds: int = 60      # ... within this many seconds
-    followup_seconds: int = 300   # look for success/lockout this long after the burst
+    followup_seconds: int = 60    # success/lockout within this many seconds after the burst (assignment: 60 s)
+    require_followup: bool = False  # True = alert ONLY on failures followed by success/lockout (exact
+                                    # wording of the assignment); False also reports the failure burst alone
 
 
 @dataclass(frozen=True)
@@ -44,12 +46,25 @@ class SuspiciousProcessConfig:
 
 @dataclass(frozen=True)
 class PivotConfig:
-    window_seconds: int = 300     # max |t_sysmon - t_suricata|
+    window_seconds: int = 300           # internal connections up to this long AFTER the alert
+    min_alert_severity: int = 4         # normalized severity; 4 = Suricata priority 1 ("high")
+    min_internal_targets: int = 1       # distinct internal hosts the pivot IP must contact
+    escalate_targets: int = 3           # reaching this many internal hosts -> CRITICAL
+    ignore_dst_ports: tuple[int, ...] = (53, 123, 137, 138)   # DNS, NTP, NetBIOS name/datagram: not lateral
+
+
+@dataclass(frozen=True)
+class WebAttackConfig:
+    error_threshold: int = 20           # số response lỗi 4xx từ một IP ...
+    error_window_seconds: int = 60      # ... trong chừng này giây = đang dò thư mục / quét website
+    group_gap_seconds: int = 300        # request cách nhau quá lâu thì tính là đợt tấn công mới
+    min_probe_requests: int = 3         # số lần dò file nhạy cảm (/.env, /.git/ ...) mới báo (bot dò lẻ tẻ rất nhiều)
 
 
 @dataclass(frozen=True)
 class CorrelationConfig:
     incident_window_seconds: int = 1800  # alerts of the same entity this close join one incident
+    alert_cooldown_seconds: int = 600    # same rule + same entity within this gap = one deduplicated alert
 
 
 @dataclass(frozen=True)
@@ -61,11 +76,13 @@ class Settings:
     batch_size: int = 20000                  # lines per transaction (bigger = faster, more RAM)
     syslog_default_year: int | None = None   # None = infer from the current date
     syslog_utc_offset_minutes: int = 0       # timezone of syslog lines that carry no offset
+    web_server_name: str | None = None       # host name given to web access log lines (the log has none)
     log_level: str = "INFO"
     ssh_bruteforce: SshBruteForceConfig = field(default_factory=SshBruteForceConfig)
     port_scan: PortScanConfig = field(default_factory=PortScanConfig)
     suspicious_process: SuspiciousProcessConfig = field(default_factory=SuspiciousProcessConfig)
     pivot: PivotConfig = field(default_factory=PivotConfig)
+    web_attack: WebAttackConfig = field(default_factory=WebAttackConfig)
     correlation: CorrelationConfig = field(default_factory=CorrelationConfig)
 
 
@@ -83,6 +100,11 @@ def _coerce(name: str, current: Any, value: Any) -> Any:
         if not isinstance(value, (list, tuple)):
             raise ConfigError("allowed_input_dirs must be a list of paths")
         return tuple(_to_path(v) for v in value)
+    if name.endswith("_ports"):
+        if not isinstance(value, (list, tuple)) or not all(
+                isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= 65535 for v in value):
+            raise ConfigError(f"{name} must be a list of port numbers (0-65535)")
+        return tuple(value)
     if isinstance(current, tuple):
         if not isinstance(value, (list, tuple)) or not all(isinstance(v, str) for v in value):
             raise ConfigError(f"{name} must be a list of strings")
@@ -97,6 +119,10 @@ def _coerce(name: str, current: Any, value: Any) -> Any:
         if isinstance(value, bool) or not isinstance(value, int):
             raise ConfigError(f"{name} must be an integer")
         return value
+    if name == "web_server_name":
+        if value is not None and (not isinstance(value, str) or not value.strip()):
+            raise ConfigError("web_server_name must be a non-empty string or null")
+        return value.strip()[:255] if value else None
     if isinstance(current, str):
         if not isinstance(value, str):
             raise ConfigError(f"{name} must be a string")
@@ -131,11 +157,20 @@ def validate(settings: Settings) -> None:
         "port_scan.window_seconds": settings.port_scan.window_seconds,
         "suspicious_process.min_score": settings.suspicious_process.min_score,
         "pivot.window_seconds": settings.pivot.window_seconds,
+        "pivot.min_internal_targets": settings.pivot.min_internal_targets,
+        "pivot.escalate_targets": settings.pivot.escalate_targets,
+        "web_attack.error_threshold": settings.web_attack.error_threshold,
+        "web_attack.error_window_seconds": settings.web_attack.error_window_seconds,
+        "web_attack.group_gap_seconds": settings.web_attack.group_gap_seconds,
+        "web_attack.min_probe_requests": settings.web_attack.min_probe_requests,
         "correlation.incident_window_seconds": settings.correlation.incident_window_seconds,
+        "correlation.alert_cooldown_seconds": settings.correlation.alert_cooldown_seconds,
     }
     for name, value in checks.items():
         if value < 1:
             raise ConfigError(f"{name} must be >= 1 (got {value})")
+    if not 1 <= settings.pivot.min_alert_severity <= 5:
+        raise ConfigError("pivot.min_alert_severity must be between 1 and 5")
     if not -840 <= settings.syslog_utc_offset_minutes <= 840:
         raise ConfigError("syslog_utc_offset_minutes out of range")
 

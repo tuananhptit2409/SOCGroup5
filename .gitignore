@@ -8,3 +8,7 @@ config/settings.json
 *.db
 *.db-wal
 *.db-shm
+*.rar
+*.zip
+datasets/uploads/
+demo/logs/

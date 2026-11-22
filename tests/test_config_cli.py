@@ -66,8 +66,8 @@ def test_missing_explicit_configuration_file(tmp_path) -> None:
 
 # ---------------------------------------------------------------------- smoke
 @pytest.mark.parametrize("module", [
-    "config", "logging_setup", "pipeline", "reporting", "main", "ingest.base", "ingest.linux_auth",
-    "ingest.suricata", "ingest.sysmon", "normalizer.models", "normalizer.linux_normalizer",
+    "config", "logging_setup", "pipeline", "reporting", "main", "ingestors.base", "ingestors.linux_auth",
+    "ingestors.suricata", "ingestors.sysmon", "normalizer.models", "normalizer.linux_normalizer",
     "normalizer.suricata_normalizer", "normalizer.sysmon_normalizer", "storage.database",
     "storage.repository", "engine.rule_engine", "engine.correlation", "engine.incident_manager",
     "engine.rules.ssh_bruteforce", "engine.rules.port_scan", "engine.rules.suspicious_process",
@@ -76,10 +76,10 @@ def test_modules_import(module: str) -> None:
     importlib.import_module(module)
 
 
-def test_rule_registry_has_four_documented_rules() -> None:
+def test_rule_registry_has_five_documented_rules() -> None:
     from engine.rule_engine import RuleEngine, build_default_rules
     rules = build_default_rules(Settings())
-    assert [r.rule_id for r in rules] == ["SOC-001", "SOC-002", "SOC-003", "SOC-004"]
+    assert [r.rule_id for r in rules] == ["SOC-001", "SOC-002", "SOC-003", "SOC-004", "SOC-005"]
     for rule in rules:
         meta = rule.metadata()
         assert meta["name"] and meta["description"] and 1 <= meta["severity"] <= 5 and meta["mitre"]
@@ -172,7 +172,7 @@ def test_cli_run_sample_as_subprocess(tmp_path) -> None:
                            capture_output=True, text=True, encoding="utf-8", timeout=300, cwd=str(tmp_path))
     assert first.returncode == 0, first.stderr[-2000:]
     output = json.loads(first.stdout)
-    assert output["counts"]["events"] == 921 and output["counts"]["incidents"] == 7
+    assert output["counts"]["events"] == 1212 and output["counts"]["incidents"] == 12
     assert output["detection"]["rule_errors"] == {}
     second = subprocess.run([sys.executable, str(PROJECT_ROOT / "main.py"), "run-sample"], env=env,
                             capture_output=True, text=True, encoding="utf-8", timeout=300, cwd=str(tmp_path))
@@ -182,3 +182,49 @@ def test_cli_run_sample_as_subprocess(tmp_path) -> None:
     stats = subprocess.run([sys.executable, str(PROJECT_ROOT / "main.py"), "stats"], env=env,
                            capture_output=True, text=True, encoding="utf-8", timeout=60, cwd=str(tmp_path))
     assert json.loads(stats.stdout)["database"]["integrity_check"] == ["ok"]
+
+
+def test_cli_assign_stats_dedup_and_trusted_unseen_log(cli_env, capsys, tmp_path) -> None:
+    from datasets import synth as s
+    config, inputs, tmp = cli_env
+    run(config, "init-db")
+    outside = tmp_path / "usb"                                   # a folder that is NOT an allowed input folder
+    outside.mkdir()
+    log = outside / "unseen_auth.log"
+    log.write_text("\n".join(s.linux_failed(s.at(i * 5), "web01", "root", "203.0.113.66", 41000 + i, i) for i in range(6))
+                   + "\n" + s.linux_accepted(s.at(40), "web01", "root", "203.0.113.66", 42000, 99) + "\n")
+    capsys.readouterr()
+    assert run(config, "ingest", "--source", "linux_auth", "--file", str(log)) == 2           # blocked by default
+    assert "outside the allowed input folders" in capsys.readouterr().err
+    assert run(config, "ingest", "--source", "linux_auth", "--file", str(log), "--trust-path", "--detect") == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["ingest"]["new_events"] == 7 and out["detection"]["incidents_created"] == 1
+    assert run(config, "assign", "--id", "1", "--analyst", "alice") == 0
+    assert "assigned to alice" in capsys.readouterr().out
+    assert run(config, "incidents", "--analyst", "alice") == 0
+    assert "analyst=alice" in capsys.readouterr().out
+    assert run(config, "stats") == 0
+    stats = json.loads(capsys.readouterr().out)
+    assert stats["deduplication"]["raw_detections"] == 1 and stats["deduplication"]["incidents"] == 1
+    assert run(config, "assign", "--id", "1", "--analyst", "alice") == 2                     # already assigned
+    assert run(config, "assign", "--id", "1", "--analyst", "") == 0                            # unassign
+    assert "unassigned" in capsys.readouterr().out
+    assert run(config, "ingest", "--source", "linux_auth", "--file", str(outside), "--trust-path") == 2   # a folder
+
+
+def test_cli_watch_runs_given_rounds_and_rejects_bad_input(cli_env, capsys, tmp_path) -> None:
+    from datasets import synth as s
+    config, _inputs, _tmp = cli_env
+    server_logs = tmp_path / "var_log"                         # e.g. /var/log on the web server
+    server_logs.mkdir()
+    log = server_logs / "auth.log"
+    log.write_text("\n".join(s.linux_failed(s.at(i * 5), "web01", "root", "203.0.113.71", 41000 + i, i)
+                             for i in range(6)) + "\n", encoding="utf-8")
+    capsys.readouterr()
+    assert run(config, "watch", "--input", f"linux_auth={log}", "--interval", "1", "--cycles", "1") == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    cycle = json.loads(lines[-1])
+    assert cycle["new_events"] == 6 and cycle["alerts_new"] == 1 and cycle["errors"] == []
+    with pytest.raises(SystemExit):
+        run(config, "watch", "--input", "apache=/x.log")           # unknown source type
+    assert run(config, "watch", "--input", f"linux_auth={log}", "--interval", "0") == 2

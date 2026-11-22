@@ -11,17 +11,19 @@ import pytest
 
 from datasets import synth as s
 from datasets.generate_dataset import build
-from ingest.base import InputPathError
+from ingestors.base import InputPathError
 from pipeline import PipelineError, ingest_file, run_detection
 from storage.database import Database, DatabaseError
 from storage.repository import Repository
 from ui import data_access
 
-SOURCE_OF = {"linux_auth.log": "linux_auth", "suricata_eve.jsonl": "suricata", "sysmon.jsonl": "sysmon"}
+SOURCE_OF = {"linux_auth.log": "linux_auth", "suricata_eve.jsonl": "suricata", "sysmon.jsonl": "sysmon",
+             "web_access.log": "web_access"}
 
 
 def load_dataset(db: Database, settings, shuffle_seed: int | None = None) -> dict:
     files, truth = build()
+    settings = replace(settings, web_server_name=truth["web_server_name"])
     for name, lines in files.items():
         if shuffle_seed is not None:
             lines = list(lines)
@@ -57,18 +59,34 @@ def test_full_pipeline_matches_ground_truth(db, settings, count) -> None:
     for name, info in truth["files"].items():
         assert per_source[SOURCE_OF[name]] == info["valid_events"]
         assert rejected[SOURCE_OF[name]] == info["rejected"]
-    assert summary.rule_errors == {} and summary.per_rule == totals["alerts_per_rule"]
+    raw_per_rule: dict[str, int] = {rule: 0 for rule in summary.per_rule}
+    for scenario in truth["scenarios"]:
+        if scenario["expected_alert"]:
+            rule = scenario["expected_rule_id"]
+            raw_per_rule[rule] = raw_per_rule.get(rule, 0) + scenario["expected_occurrences"]
+    assert summary.rule_errors == {} and summary.per_rule == raw_per_rule      # raw detections per rule
+    assert sum(raw_per_rule.values()) == summary.raw_detections == totals["raw_detections"]
     assert count("alerts") == totals["alerts"] and count("incidents") == totals["incidents"]
+    with db.connection() as conn:
+        stored = dict(conn.execute("SELECT rule_id, COUNT(*) FROM alerts GROUP BY rule_id").fetchall())
+    assert stored == totals["alerts_per_rule"]
+    groups = {s["incident_group"] for s in truth["scenarios"] if s["expected_alert"]}
+    assert len(groups) == totals["incidents"]
+    assert summary.dedup["raw_alerts"] == totals["raw_alerts"]
+    assert summary.dedup["incidents"] == totals["incidents"]
 
     alerts = alert_rows(db)
     for scenario in truth["scenarios"]:
         hits = [a for a in alerts if matches(a, scenario["entity"])]
         if scenario["expected_alert"]:
+            # one entity can be hit by two rules (S01 SSH + S27 web from the same IP): match the rule too
+            hits = [a for a in hits if a["rule_id"] == scenario["expected_rule_id"]]
             assert len(hits) == 1, scenario["scenario_id"]
             alert = hits[0]
             assert alert["rule_id"] == scenario["expected_rule_id"], scenario["scenario_id"]
             assert alert["severity"] == scenario["expected_severity"], scenario["scenario_id"]
             assert alert["event_count"] == scenario["input"]["events"], scenario["scenario_id"]
+            assert alert["occurrence_count"] == scenario["expected_occurrences"], scenario["scenario_id"]
         else:
             assert hits == [], scenario["scenario_id"]
 
@@ -97,7 +115,7 @@ def test_alert_incident_relationships_and_evidence(db, settings, count) -> None:
         assert "Failed password for root from 203.0.113.10" in row["raw_line"]
         roles = {r[0] for r in conn.execute("SELECT DISTINCT role FROM alert_events")}
     assert {"failed_login", "successful_login_after_failures", "account_lockout", "scan_connection",
-            "process_creation", "suricata_alert", "sysmon_connection"} <= roles
+            "process_creation", "suricata_alert", "sysmon_internal_connection"} <= roles
     assert db.integrity_report()["foreign_key_violations"] == []
 
 
@@ -130,9 +148,10 @@ def test_importing_same_files_twice_adds_nothing(db, settings, count) -> None:
     summary = run_detection(db, settings)
     assert (summary.alerts_new, summary.alerts_updated, summary.incidents_created) == (0, 0, 0)
     assert {t: count(t) for t in before} == before
-    assert count("import_batches") == 6        # each import is still recorded as its own batch
+    assert count("import_batches") == 2 * len(files)      # each import is still recorded as its own batch
     with db.connection() as conn:
-        dup = conn.execute("SELECT SUM(duplicates), SUM(new_events) FROM import_batches WHERE batch_id > 3").fetchone()
+        dup = conn.execute("SELECT SUM(duplicates), SUM(new_events) FROM import_batches WHERE batch_id > ?",
+                           (len(files),)).fetchone()
     assert dup[0] == before["raw_events"] and dup[1] == 0
 
 
@@ -327,3 +346,53 @@ def test_restart_persistence_of_incident_state(settings, db, ingest, detect, cou
     assert detail["notes"]["note"].tolist() == ["note survives restart"]
     assert len(detail["events"]) == 6 and len(detail["history"]) == 2
     assert run_detection(fresh, settings).incidents_created == 0
+
+
+# ------------------------------------------------------------- watch (giám sát liên tục)
+def test_watch_files_picks_up_new_lines_and_survives_missing_file(db, settings) -> None:
+    from pipeline import watch_files
+    log = settings.allowed_input_dirs[0] / "auth.log"
+    log.write_text(s.linux_failed(s.at(0), "web01", "root", "203.0.113.70", 40000, 1) + "\n", encoding="utf-8")
+    missing = settings.allowed_input_dirs[0] / "eve.json"                      # not created yet
+    reports, appended = [], []
+
+    def fake_sleep(_seconds: float) -> None:      # between two rounds the attacker keeps trying
+        if not appended:
+            more = [s.linux_failed(s.at(5 + i * 5), "web01", "root", "203.0.113.70", 40001 + i, 2 + i)
+                    for i in range(5)]
+            with log.open("a", encoding="utf-8") as handle:
+                handle.write("\n".join(more) + "\n")
+            appended.append(True)
+
+    rounds = watch_files(db, settings, [("linux_auth", log), ("suricata", missing)], interval=1, cycles=3,
+                         report=reports.append, sleep=fake_sleep)
+    assert rounds == 3
+    assert reports[0]["new_events"] == 1 and "alerts_new" in reports[0] and reports[0]["alerts_new"] == 0
+    assert reports[1]["new_events"] == 5 and reports[1]["alerts_new"] == 1          # threshold reached
+    assert reports[2]["new_events"] == 0 and "alerts_new" not in reports[2]         # nothing new: no detection
+    assert all("input file not found" in r["errors"][0] for r in reports)          # missing file never fatal
+
+
+def test_watch_reads_only_appended_bytes_waits_for_partial_line_and_handles_rotation(db, settings) -> None:
+    from pipeline import watch_files
+    log = settings.allowed_input_dirs[0] / "auth.log"
+    first = s.linux_failed(s.at(0), "web01", "root", "203.0.113.72", 40000, 1)
+    second = s.linux_failed(s.at(5), "web01", "root", "203.0.113.72", 40001, 2)
+    log.write_text(first + "\n" + second[:30], encoding="utf-8")              # second line half written
+    def finish_line() -> None:                                                # writer finishes the line
+        with log.open("a", encoding="utf-8") as handle:
+            handle.write(second[30:] + "\n")
+
+    steps = iter([
+        finish_line,
+        lambda: log.write_text(s.linux_failed(s.at(9), "web01", "root", "203.0.113.72", 40002, 3) + "\n",
+                               encoding="utf-8"),                              # logrotate: new, shorter file
+    ])
+    reports = []
+    watch_files(db, settings, [("linux_auth", log)], interval=1, cycles=3, report=reports.append,
+                sleep=lambda _s: next(steps)())
+    assert [r["new_events"] for r in reports] == [1, 1, 1]
+    with db.connection() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM raw_events WHERE status = 'rejected'").fetchone()[0] == 0
+        lines = [r[0] for r in conn.execute("SELECT raw_line FROM raw_events ORDER BY rowid")]
+    assert lines[1] == second                                                  # never stored half a line

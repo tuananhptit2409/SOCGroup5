@@ -49,8 +49,12 @@ CREATE TABLE IF NOT EXISTS events (
     process_name   TEXT,
     process_path   TEXT,
     command_line   TEXT,
-    parent_process TEXT
+    parent_process TEXT,
+    url            TEXT,
+    http_status    INTEGER,
+    user_agent     TEXT
 );
+-- DB OPTIMIZATION - B-Tree Indexes phục vụ tìm kiếm & rule detection
 CREATE INDEX IF NOT EXISTS idx_events_ts ON events (ts_epoch);
 CREATE INDEX IF NOT EXISTS idx_events_src_ip ON events (src_ip, ts_epoch);
 CREATE INDEX IF NOT EXISTS idx_events_dst_ip ON events (dst_ip, ts_epoch);
@@ -106,6 +110,7 @@ CREATE TABLE IF NOT EXISTS incidents (
     src_ip           TEXT,
     dst_ip           TEXT,
     affected_asset   TEXT,
+    assigned_analyst TEXT,
     first_seen       TEXT NOT NULL,
     last_seen        TEXT NOT NULL,
     first_ts         REAL NOT NULL,
@@ -119,6 +124,7 @@ CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents (status, severity);
 CREATE INDEX IF NOT EXISTS idx_incidents_entity ON incidents (entity_key, status);
 CREATE INDEX IF NOT EXISTS idx_incidents_src_ip ON incidents (src_ip);
 CREATE INDEX IF NOT EXISTS idx_incidents_created ON incidents (created_at);
+CREATE INDEX IF NOT EXISTS idx_incidents_analyst ON incidents (assigned_analyst);
 
 -- An alert belongs to at most one incident (PRIMARY KEY on alert_id).
 CREATE TABLE IF NOT EXISTS incident_alerts (

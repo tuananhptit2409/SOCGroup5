@@ -113,6 +113,7 @@ class Repository:
             params += [pattern] * 5
         return (" WHERE " + " AND ".join(clauses)) if clauses else "", params
 
+    # Tuần 7: Tối ưu hóa truy vấn qua Index, nạp log theo lô (batch insert) và phân trang LIMIT/OFFSET
     def search_events(self, *, limit: int = 100, offset: int = 0, sort: str = "time_desc",
                       **filters: Any) -> list[sqlite3.Row]:
         """Search normalized events. ``sort`` must be one of the whitelisted keys."""

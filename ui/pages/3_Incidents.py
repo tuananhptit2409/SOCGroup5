@@ -94,7 +94,22 @@ def render() -> None:
         else:
             st.success(f"Incident #{incident_id} assigned to {analyst.strip() or 'nobody'}.")
             st.rerun()
-
+    with st.form("add_note"):
+        st.caption("Add note")
+        note_text = st.text_area("Note", key="note_text")
+        note_author = st.text_input("Author", value="analyst", key="note_author")
+        note_submitted = st.form_submit_button("Save note")
+    if note_submitted:
+        if not note_text.strip():
+            st.warning("Please enter a note.")
+        else:
+            try:
+                data_access.add_incident_note(db, settings, int(incident_id), note_text, note_author)
+            except HANDLED_ERRORS as exc:
+                st.error(f"Note not saved: {exc}")
+            else:
+                st.success(f"Note added to incident #{incident_id}.")
+                st.rerun()
     st.caption("Linked alerts")
     st.dataframe(detail["alerts"].drop(columns=["evidence"], errors="ignore"),
                  **TABLE, hide_index=True)

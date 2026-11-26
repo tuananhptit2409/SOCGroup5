@@ -1,0 +1,200 @@
+{
+  "environment": {
+    "timestamp_utc": "2026-11-14T03:40:12Z",
+    "os": "Linux-6.18.44-fc-v470-x86_64-with-glibc2.39",
+    "python": "3.13.18",
+    "sqlite": "3.53.1",
+    "cpu_count": 2,
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "ram_total_gb": 7.8,
+    "pandas_version": "3.0.5",
+    "streamlit_version": "not installed",
+    "plotly_version": "not installed",
+    "pytest_version": "9.1.1",
+    "psutil_version": "7.2.2",
+    "event_order": "chronological"
+  },
+  "results": [
+    {
+      "events": 10000,
+      "order": "chronological",
+      "batch_size": 20000,
+      "expected": {
+        "lines": 10000,
+        "attacks_per_rule": 1,
+        "expected_alerts": 4,
+        "expected_incidents": 4
+      },
+      "counts": {
+        "raw_events": 10000,
+        "rejected_events": 0,
+        "events": 10000,
+        "alerts": 4,
+        "incidents": 4,
+        "active_incidents": 4,
+        "closed_incidents": 0
+      },
+      "rejected_lines": 0,
+      "generation_seconds": 0.079,
+      "ingest_wall_seconds": 0.377,
+      "parse_seconds": 0.056,
+      "normalize_seconds": 0.102,
+      "database_insert_seconds": 0.191,
+      "detection_seconds": 0.029,
+      "detection_seconds_per_rule": {
+        "SOC-001": 0.001,
+        "SOC-002": 0.02,
+        "SOC-003": 0.005,
+        "SOC-004": 0.003
+      },
+      "correlation_seconds": 0.001,
+      "detection_latency_seconds": 0.033,
+      "detection_rerun_seconds": 0.034,
+      "total_processing_seconds": 0.41,
+      "ingest_events_per_second": 26533.5,
+      "pipeline_events_per_second": 24409.4,
+      "rss_start_mb": 23.7,
+      "rss_after_ingest_mb": 41.2,
+      "rss_peak_mb": 41.5,
+      "database_size_mb": 7.5,
+      "query_seconds": {
+        "search_by_ip": 0.0002,
+        "count_by_ip": 0.0,
+        "search_time_range_page": 0.0002,
+        "search_severity": 0.0001,
+        "search_source_page": 0.0002,
+        "text_search_like": 0.0023,
+        "list_incidents": 0.0001,
+        "overview_counts": 0.0,
+        "overview_top_ips": 0.0015,
+        "overview_timeline": 0.0019
+      },
+      "integrity_check": [
+        "ok"
+      ],
+      "error_count": 0,
+      "errors": []
+    },
+    {
+      "events": 100000,
+      "order": "chronological",
+      "batch_size": 20000,
+      "expected": {
+        "lines": 100000,
+        "attacks_per_rule": 10,
+        "expected_alerts": 40,
+        "expected_incidents": 40
+      },
+      "counts": {
+        "raw_events": 100000,
+        "rejected_events": 0,
+        "events": 100000,
+        "alerts": 40,
+        "incidents": 40,
+        "active_incidents": 40,
+        "closed_incidents": 0
+      },
+      "rejected_lines": 0,
+      "generation_seconds": 0.785,
+      "ingest_wall_seconds": 3.986,
+      "parse_seconds": 0.579,
+      "normalize_seconds": 1.047,
+      "database_insert_seconds": 2.146,
+      "detection_seconds": 0.297,
+      "detection_seconds_per_rule": {
+        "SOC-001": 0.012,
+        "SOC-002": 0.199,
+        "SOC-003": 0.06,
+        "SOC-004": 0.026
+      },
+      "correlation_seconds": 0.006,
+      "detection_latency_seconds": 0.308,
+      "detection_rerun_seconds": 0.295,
+      "total_processing_seconds": 4.294,
+      "ingest_events_per_second": 25085.5,
+      "pipeline_events_per_second": 23285.8,
+      "rss_start_mb": 25.4,
+      "rss_after_ingest_mb": 92.5,
+      "rss_peak_mb": 120.8,
+      "database_size_mb": 74.3,
+      "query_seconds": {
+        "search_by_ip": 0.0002,
+        "count_by_ip": 0.0,
+        "search_time_range_page": 0.0002,
+        "search_severity": 0.0002,
+        "search_source_page": 0.0002,
+        "text_search_like": 0.0234,
+        "list_incidents": 0.0004,
+        "overview_counts": 0.0001,
+        "overview_top_ips": 0.0153,
+        "overview_timeline": 0.0237
+      },
+      "integrity_check": [
+        "ok"
+      ],
+      "error_count": 0,
+      "errors": []
+    },
+    {
+      "events": 500000,
+      "order": "chronological",
+      "batch_size": 20000,
+      "expected": {
+        "lines": 500000,
+        "attacks_per_rule": 50,
+        "expected_alerts": 200,
+        "expected_incidents": 200
+      },
+      "counts": {
+        "raw_events": 500000,
+        "rejected_events": 0,
+        "events": 500000,
+        "alerts": 200,
+        "incidents": 200,
+        "active_incidents": 200,
+        "closed_incidents": 0
+      },
+      "rejected_lines": 0,
+      "generation_seconds": 3.615,
+      "ingest_wall_seconds": 25.189,
+      "parse_seconds": 2.956,
+      "normalize_seconds": 5.37,
+      "database_insert_seconds": 15.749,
+      "detection_seconds": 1.182,
+      "detection_seconds_per_rule": {
+        "SOC-001": 0.072,
+        "SOC-002": 0.74,
+        "SOC-003": 0.265,
+        "SOC-004": 0.105
+      },
+      "correlation_seconds": 0.025,
+      "detection_latency_seconds": 1.221,
+      "detection_rerun_seconds": 1.413,
+      "total_processing_seconds": 26.41,
+      "ingest_events_per_second": 19850.1,
+      "pipeline_events_per_second": 18932.2,
+      "rss_start_mb": 33.3,
+      "rss_after_ingest_mb": 145.9,
+      "rss_peak_mb": 161.5,
+      "database_size_mb": 374.1,
+      "query_seconds": {
+        "search_by_ip": 0.0003,
+        "count_by_ip": 0.0,
+        "search_time_range_page": 0.0003,
+        "search_severity": 0.0003,
+        "search_source_page": 0.0002,
+        "text_search_like": 0.1237,
+        "list_incidents": 0.0016,
+        "overview_counts": 0.0075,
+        "overview_top_ips": 0.0727,
+        "overview_timeline": 0.1203
+      },
+      "integrity_check": [
+        "ok"
+      ],
+      "error_count": 0,
+      "errors": []
+    }
+  ]
+}

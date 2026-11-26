@@ -1,0 +1,191 @@
+{
+  "events": 100000,
+  "cycles": 30,
+  "rows": [
+    {
+      "cycle": 0,
+      "python_heap_mb": 0.11,
+      "python_peak_mb": 63.8,
+      "rss_mb": 172.5
+    },
+    {
+      "cycle": 1,
+      "python_heap_mb": 0.11,
+      "python_peak_mb": 63.9,
+      "rss_mb": 189.4
+    },
+    {
+      "cycle": 2,
+      "python_heap_mb": 0.11,
+      "python_peak_mb": 63.9,
+      "rss_mb": 191.3
+    },
+    {
+      "cycle": 3,
+      "python_heap_mb": 0.11,
+      "python_peak_mb": 63.9,
+      "rss_mb": 190.3
+    },
+    {
+      "cycle": 4,
+      "python_heap_mb": 0.11,
+      "python_peak_mb": 63.9,
+      "rss_mb": 190.3
+    },
+    {
+      "cycle": 5,
+      "python_heap_mb": 0.11,
+      "python_peak_mb": 63.9,
+      "rss_mb": 192.3
+    },
+    {
+      "cycle": 6,
+      "python_heap_mb": 0.11,
+      "python_peak_mb": 63.9,
+      "rss_mb": 192.3
+    },
+    {
+      "cycle": 7,
+      "python_heap_mb": 0.11,
+      "python_peak_mb": 63.9,
+      "rss_mb": 191.3
+    },
+    {
+      "cycle": 8,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 191.3
+    },
+    {
+      "cycle": 9,
+      "python_heap_mb": 0.11,
+      "python_peak_mb": 63.9,
+      "rss_mb": 192.3
+    },
+    {
+      "cycle": 10,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 192.3
+    },
+    {
+      "cycle": 11,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 193.3
+    },
+    {
+      "cycle": 12,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 191.3
+    },
+    {
+      "cycle": 13,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 190.4
+    },
+    {
+      "cycle": 14,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 193.3
+    },
+    {
+      "cycle": 15,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 192.3
+    },
+    {
+      "cycle": 16,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 195.3
+    },
+    {
+      "cycle": 17,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 195.3
+    },
+    {
+      "cycle": 18,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 195.3
+    },
+    {
+      "cycle": 19,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 196.3
+    },
+    {
+      "cycle": 20,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 196.3
+    },
+    {
+      "cycle": 21,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 196.3
+    },
+    {
+      "cycle": 22,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 194.4
+    },
+    {
+      "cycle": 23,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 195.3
+    },
+    {
+      "cycle": 24,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 196.3
+    },
+    {
+      "cycle": 25,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 196.3
+    },
+    {
+      "cycle": 26,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 196.3
+    },
+    {
+      "cycle": 27,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 196.3
+    },
+    {
+      "cycle": 28,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 196.3
+    },
+    {
+      "cycle": 29,
+      "python_heap_mb": 0.12,
+      "python_peak_mb": 63.9,
+      "rss_mb": 196.3
+    }
+  ],
+  "heap_first_mb": 0.11,
+  "heap_last_mb": 0.12,
+  "heap_growth_second_half_mb": 0.0,
+  "rss_first_mb": 172.5,
+  "rss_last_mb": 196.3
+}

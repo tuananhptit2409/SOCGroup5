@@ -1,0 +1,90 @@
+{
+  "seed": 1234,
+  "unit": {
+    "stats": {
+      "linux_auth": {
+        "accepted": 8401,
+        "rejected": 11599
+      },
+      "suricata": {
+        "accepted": 3104,
+        "rejected": 16896
+      },
+      "sysmon": {
+        "accepted": 4778,
+        "rejected": 15222
+      },
+      "web_access": {
+        "accepted": 4649,
+        "rejected": 15351
+      }
+    },
+    "crash_count": 0,
+    "crashes": [],
+    "slow_calls": []
+  },
+  "redos": {
+    "seconds": {
+      "linux_failed_many_from": 0.0002,
+      "linux_failed_no_end": 0.0014,
+      "linux_accepted_spaces": 0.0009,
+      "linux_header_spaces": 0.0009,
+      "linux_lockout_words": 0.0015,
+      "linux_sudo_semicolons": 0.001,
+      "linux_sudo_pwd_users": 0.001,
+      "linux_pam_failure_users": 0.0013,
+      "web_quotes_backslashes": 0.0165,
+      "web_unclosed_quote": 0.0029,
+      "web_many_escapes_no_status": 0.0026,
+      "web_agent_quotes": 0.0085,
+      "web_rule_union_comments": 0.0004,
+      "web_rule_quotes_or": 0.0003,
+      "web_rule_dots": 0.0002,
+      "web_rule_pipes": 0.0003,
+      "web_rule_percent": 0.0014,
+      "process_spaces": 0.001,
+      "process_enc_prefix": 0.0009,
+      "process_certutil": 0.0012,
+      "process_mshta": 0.008,
+      "process_iex": 0.0005,
+      "process_hidden": 0.001
+    },
+    "slow": {}
+  },
+  "pipeline": {
+    "linux_auth": {
+      "lines": 30866,
+      "new_events": 7827,
+      "rejected": 11150,
+      "duplicates": 12693
+    },
+    "suricata": {
+      "lines": 30167,
+      "new_events": 2937,
+      "rejected": 15410,
+      "duplicates": 12051
+    },
+    "sysmon": {
+      "lines": 30155,
+      "new_events": 3531,
+      "rejected": 13808,
+      "duplicates": 13131
+    },
+    "web_access": {
+      "lines": 30934,
+      "new_events": 4308,
+      "rejected": 14749,
+      "duplicates": 12832
+    },
+    "batches": {
+      "completed": 4
+    },
+    "unexpected_errors": 0,
+    "rule_errors": {},
+    "alerts_new": 46,
+    "integrity": [
+      "ok"
+    ],
+    "foreign_key_violations": 0
+  }
+}

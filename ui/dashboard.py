@@ -36,6 +36,11 @@ def render() -> None:
     dcols[1].metric("Deduplicated alerts", f"{dedup['alerts']:,}")
     dcols[2].metric("Incidents to triage", f"{dedup['incidents']:,}")
     dcols[3].metric("Alert noise removed", f"{dedup['reduction_percent']}%")
+
+    scols = st.columns(3)
+    scols[0].metric("Source types", f"{len(data['events_by_source']):,}")
+    scols[1].metric("Distinct source IPs (top 10)", f"{len(data['top_source_ips']):,}")
+    scols[2].metric("Timeline bucket", f"{data['bucket_seconds'] // 60} min")
     if counts["events"] == 0:
         st.info("The database has no events yet. Import logs with `python main.py run-sample` "
                 "or `python main.py ingest --source <type> --file <path>`.")
@@ -49,6 +54,8 @@ def render() -> None:
         else:
             st.plotly_chart(px.bar(data["alerts_by_severity"], x="label", y="count",
                                    labels={"label": "Severity", "count": "Alerts"}), **CHART)
+            st.plotly_chart(px.pie(data["alerts_by_severity"], names="label", values="count",
+                                   title="Alert share by severity"), **CHART)                                   
         st.subheader("Top Source IPs")
         if data["top_source_ips"].empty:
             st.caption("No source IPs.")

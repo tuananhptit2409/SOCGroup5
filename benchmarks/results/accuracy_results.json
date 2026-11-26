@@ -1,0 +1,107 @@
+{
+  "scenario_instances": 345,
+  "replicates_per_kind": 5,
+  "alerts_total": 185,
+  "alerts_not_matching_any_scenario_of_their_rule": [],
+  "rule_errors": {},
+  "per_rule": {
+    "SOC-001": {
+      "TP": 30,
+      "FP": 5,
+      "FN": 10,
+      "TN": 30,
+      "false_positive_kinds": {
+        "HARD_benign_misconfigured_script_6_failures": 5
+      },
+      "false_negative_kinds": {
+        "HARD_low_and_slow_1_per_30s": 5,
+        "HARD_password_spraying_many_ips": 5
+      },
+      "rule_name": "SSH Brute Force",
+      "scenarios": 75,
+      "precision": 0.8571428571428571,
+      "recall": 0.75,
+      "f1": 0.7999999999999999,
+      "false_positive_rate": 0.14285714285714285
+    },
+    "SOC-002": {
+      "TP": 25,
+      "FP": 5,
+      "FN": 5,
+      "TN": 20,
+      "false_positive_kinds": {
+        "HARD_benign_monitoring_checks_20_ports": 5
+      },
+      "false_negative_kinds": {
+        "HARD_slow_scan_1_port_per_5s": 5
+      },
+      "rule_name": "Port Scan",
+      "scenarios": 55,
+      "precision": 0.8333333333333334,
+      "recall": 0.8333333333333334,
+      "f1": 0.8333333333333334,
+      "false_positive_rate": 0.2
+    },
+    "SOC-003": {
+      "TP": 35,
+      "FP": 15,
+      "FN": 10,
+      "TN": 25,
+      "false_positive_kinds": {
+        "HARD_benign_user_installed_app_in_appdata_local": 5,
+        "HARD_benign_portable_tool_from_downloads": 5,
+        "HARD_benign_management_agent_encoded_powershell": 5
+      },
+      "false_negative_kinds": {
+        "HARD_malware_in_program_files": 5,
+        "HARD_payload_in_temp_started_via_msiexec": 5
+      },
+      "rule_name": "Suspicious Process",
+      "scenarios": 85,
+      "precision": 0.7,
+      "recall": 0.7777777777777778,
+      "f1": 0.7368421052631577,
+      "false_positive_rate": 0.375
+    },
+    "SOC-004": {
+      "TP": 20,
+      "FP": 5,
+      "FN": 15,
+      "TN": 20,
+      "false_positive_kinds": {
+        "HARD_benign_ids_false_positive_then_normal_file_share": 5
+      },
+      "false_negative_kinds": {
+        "HARD_internal_connection_6_minutes_after_alert": 5,
+        "HARD_connection_before_alert": 5,
+        "HARD_nat_ids_sees_different_address": 5
+      },
+      "rule_name": "Network-to-Host Pivot",
+      "scenarios": 60,
+      "precision": 0.8,
+      "recall": 0.5714285714285714,
+      "f1": 0.6666666666666666,
+      "false_positive_rate": 0.2
+    },
+    "SOC-005": {
+      "TP": 35,
+      "FP": 10,
+      "FN": 10,
+      "TN": 15,
+      "false_positive_kinds": {
+        "HARD_benign_search_for_union_select_tutorial": 5,
+        "HARD_benign_link_checker_30_dead_links": 5
+      },
+      "false_negative_kinds": {
+        "HARD_slow_dir_bruteforce_1_per_10s": 5,
+        "HARD_sqli_in_post_body": 5
+      },
+      "rule_name": "Web Attack",
+      "scenarios": 70,
+      "precision": 0.7777777777777778,
+      "recall": 0.7777777777777778,
+      "f1": 0.7777777777777778,
+      "false_positive_rate": 0.4
+    }
+  }
+}

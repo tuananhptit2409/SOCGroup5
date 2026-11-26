@@ -10,6 +10,14 @@ from typing import Iterator
 
 logger = logging.getLogger(__name__)
 SCHEMA_FILE = Path(__file__).with_name("schema.sql")
+# Columns added after the first release: (table, column, column definition).
+# init_schema() adds them to an existing database; check_schema() reports them.
+MIGRATED_COLUMNS = (
+    ("incidents", "assigned_analyst", "TEXT"),
+    ("events", "url", "TEXT"),
+    ("events", "http_status", "INTEGER"),
+    ("events", "user_agent", "TEXT"),
+)
 REQUIRED_TABLES = ("import_batches", "raw_events", "events", "alerts", "alert_events", "incidents",
                    "incident_alerts", "incident_events", "incident_history", "incident_notes")
 
@@ -85,8 +93,25 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         script = SCHEMA_FILE.read_text(encoding="utf-8")
         with self.connection(must_exist=False) as conn:
+            added = self._add_missing_columns(conn)   # before the script: it indexes the new columns
             conn.executescript(script)
+        if added:
+            logger.info("event=schema_migrated added=%s", ",".join(added))
         logger.info("event=schema_initialized path=%s", self.path)
+
+    @staticmethod
+    def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
+        return {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+
+    def _add_missing_columns(self, conn: sqlite3.Connection) -> list[str]:
+        """Upgrade a database created by an older version (ALTER TABLE ... ADD COLUMN)."""
+        added = []
+        for table, column, definition in MIGRATED_COLUMNS:
+            existing = self._columns(conn, table)
+            if existing and column not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+                added.append(f"{table}.{column}")
+        return added
 
     def check_schema(self) -> None:
         """Raise DatabaseError unless every required table exists."""
@@ -99,6 +124,12 @@ class Database:
         if missing:
             raise DatabaseError(f"database is not initialized (missing tables: {', '.join(missing)}); "
                                 "run: python main.py init-db")
+        with self.connection() as conn:
+            outdated = [f"{table}.{column}" for table, column, _ in MIGRATED_COLUMNS
+                        if column not in self._columns(conn, table)]
+        if outdated:
+            raise DatabaseError(f"database schema is out of date (missing {', '.join(outdated)}); "
+                                "run: python main.py init-db (existing data is kept)")
 
     def integrity_report(self) -> dict[str, object]:
         """Run PRAGMA integrity_check and foreign_key_check."""

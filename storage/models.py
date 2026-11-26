@@ -82,6 +82,7 @@ class IncidentRecord:
         return STATUS_LABELS.get(self.status, self.status)
 
 
+# Tuần 9: DedupSummary thống kê giảm tải cảnh báo cho SOC Analyst
 @dataclass(frozen=True)
 class DedupSummary:
     """How much alert volume the toolkit removes before an analyst sees it.

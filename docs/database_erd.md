@@ -1,5 +1,7 @@
 # Database ERD
 
+File schema: `storage/schema.sql`. Khởi tạo: `python main.py init-db` (chạy lại nhiều lần vẫn an toàn).
+
 ```mermaid
 erDiagram
     import_batches ||--o{ raw_events : "chứa"
@@ -56,6 +58,7 @@ erDiagram
         TEXT rule_id
         TEXT src_ip
         TEXT affected_asset
+        TEXT assigned_analyst
         INTEGER occurrence_count }
     incident_alerts { INTEGER alert_id PK
         INTEGER incident_id FK }
@@ -82,7 +85,7 @@ erDiagram
 | `events` | Event đã chuẩn hóa | `event_id` = `raw_id` (FK tới `raw_events`) | Đầy đủ trường của Unified Event Schema trừ `raw_event` (dựng lại từ `raw_line`) |
 | `alerts` | Kết quả của rule | `alert_id` | `fingerprint` UNIQUE; `evidence` là JSON |
 | `alert_events` | Event làm bằng chứng cho alert | (`alert_id`, `event_id`) | `role` cho biết vai trò (ví dụ `failed_login`, `suricata_alert`) |
-| `incidents` | Vụ việc | `incident_id` | `status` có CHECK 4 giá trị |
+| `incidents` | Vụ việc | `incident_id` | `status` có CHECK 4 giá trị; `assigned_analyst` (NULL = chưa giao), đổi bằng `IncidentManager.assign` và ghi vào `incident_history` |
 | `incident_alerts` | Alert thuộc incident nào | `alert_id` | Một alert thuộc tối đa một incident |
 | `incident_events` | Event liên quan incident | (`incident_id`, `event_id`) | Hợp của bằng chứng các alert |
 | `incident_history` | Lịch sử thay đổi trạng thái | `history_id` | Ai, lúc nào, từ đâu sang đâu, ghi chú |
@@ -106,7 +109,22 @@ erDiagram
 | `idx_events_action (action, src_ip, ts_epoch)` | Truy vấn của rule |
 | `idx_events_hostname (hostname)` | Top target hosts |
 | `idx_alerts_rule_entity (rule_id, entity_key, first_ts)` | Dedup alert |
-| `idx_incidents_status`, `idx_incidents_entity`, `idx_incidents_src_ip`, `idx_incidents_created` | Tìm incident |
+| `idx_incidents_status`, `idx_incidents_entity`, `idx_incidents_src_ip`, `idx_incidents_created`, `idx_incidents_analyst` | Tìm incident |
 | `idx_alert_events_event`, `idx_incident_events_event`, `idx_incident_alerts_incident` | Lấy event/alert theo incident |
 
 Việc dùng index được kiểm tra bằng `EXPLAIN QUERY PLAN` trong `tests/test_database.py::test_search_uses_indexes`. Tìm kiếm văn bản (`LIKE '%...%'`) không dùng được index và quét toàn bảng (0,16 giây với 500.000 event).
+
+## Cột web của bảng `events` (schema phiên bản 2)
+
+`url TEXT`, `http_status INTEGER`, `user_agent TEXT` — chỉ có giá trị với event `web_request` (access log nginx/Apache). Được khai báo trong `MIGRATED_COLUMNS` nên database cũ được thêm cột khi chạy `init-db` / `run-sample`.
+
+## Mô hình dữ liệu trong Python (`storage/models.py`)
+
+| Lớp / hằng | Nội dung |
+|---|---|
+| `INCIDENT_STATUSES`, `STATUS_LABELS`, `SEVERITY_LABELS` | Bốn trạng thái NEW / IN_PROGRESS / CLOSED / FALSE_POSITIVE, nhãn hiển thị, nhãn severity 1-5 |
+| `AlertRecord` | Một dòng `alerts` (kèm `occurrence_count`, evidence đã parse), tạo bằng `AlertRecord.from_row` |
+| `IncidentRecord` | Một dòng `incidents` (kèm `assigned_analyst`) |
+| `DedupSummary` | `raw_detections`, `ids_alerts`, `raw_alerts`, `alerts`, `incidents`, `reduction_percent`; `sentence()` cho CLI/dashboard |
+
+Migration: cột mới được khai báo trong `storage.database.MIGRATED_COLUMNS` và thêm tự động khi chạy `init-db`.

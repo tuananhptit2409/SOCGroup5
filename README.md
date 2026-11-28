@@ -102,12 +102,18 @@ Hoặc dùng trang **Upload Logs** trên dashboard: chọn loại log, tải fil
 
 ## 9. Dùng dashboard
 
+Chạy dashboard bằng `python main.py dashboard` (hoặc `python -m streamlit run ui/dashboard.py`), rồi mở http://localhost:8501. Nếu database còn trống, chạy `python main.py run-sample` trước để có dữ liệu.
+
+![Trang Overview của SOC Dashboard](docs/images/dashboard.png)
+
+*Trang Overview: số liệu tổng quan, chỉ số giảm nhiễu, biểu đồ theo severity, nguồn log và Incident Timeline.*
+
 | Trang | Nội dung |
 |---|---|
-| Overview | Tổng event, alert, incident; **chỉ số giảm nhiễu** (raw alerts, alert sau dedup, incident, % giảm); biểu đồ theo severity, nguồn, top IP, top host, **Top Attacked Assets**; event timeline; **Incident Timeline** (Gantt từng incident, zoom/hover) |
+| Overview | Tổng event, alert, incident; **chỉ số giảm nhiễu** (raw alerts, alert sau dedup, incident, % giảm); thẻ thống kê nguồn log (số loại nguồn, số IP nguồn trong top 10, độ rộng khoảng gom của timeline); biểu đồ theo severity (cột và tròn), nguồn, top IP, top host, **Top Attacked Assets**; event timeline; **Incident Timeline** (Gantt từng incident, zoom/hover) |
 | Events | Tìm kiếm, lọc theo nguồn / IP / thời gian / severity, phân trang, xem raw event |
 | Alerts | Danh sách alert, rule, severity, số event, evidence |
-| Incidents | Danh sách incident (lọc theo trạng thái, severity, IP, analyst), chi tiết, cập nhật trạng thái, **giao cho analyst** |
+| Incidents | Danh sách incident (lọc theo trạng thái, severity, IP, analyst), chi tiết, cập nhật trạng thái, **giao cho analyst**, **thêm ghi chú** |
 | Investigation | **Timeline tương tác** (Plotly, theo làn: log event / alert / đổi trạng thái / ghi chú) + bảng lọc theo loại, alert liên quan, event liên quan, raw log, ghi chú analyst, tải báo cáo |
 | Upload Logs | Tải file log lên, nhập và chạy detection |
 
